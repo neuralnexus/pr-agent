@@ -225,6 +225,17 @@ class LiteLLMAIHandler(BaseAiHandler):
             self.api_base = openrouter_api_base
             litellm.api_base = openrouter_api_base
 
+        # Support for custom OpenAI-compatible APIs
+        if get_settings().get("CUSTOM_OPENAI.KEY", None):
+            custom_openai_key = get_settings().get("CUSTOM_OPENAI.KEY", None)
+            litellm.api_key = custom_openai_key
+            openai.api_key = custom_openai_key
+        if get_settings().get("CUSTOM_OPENAI.API_BASE", None):
+            custom_openai_api_base = get_settings().get("CUSTOM_OPENAI.API_BASE", None)
+            self.api_base = custom_openai_api_base
+            litellm.api_base = custom_openai_api_base
+            openai.api_base = custom_openai_api_base
+
         # Models that only use user message
         self.user_message_only_models = USER_MESSAGE_ONLY_MODELS
 

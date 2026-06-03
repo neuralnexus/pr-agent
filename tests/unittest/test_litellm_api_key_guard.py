@@ -378,3 +378,104 @@ class TestApiKeyGuard:
             # (which is Ollama in this case, but the guard correctly allows real keys through)
             await handler.chat_completion(model="gpt-4o", system="sys", user="usr")
             assert mock_call.call_args[1]["api_key"] == ollama_key
+
+
+class TestCustomOpenAI:
+    """Tests for custom OpenAI-compatible API support."""
+
+    @pytest.mark.asyncio
+    async def test_custom_openai_key_and_base_forwarded(self, monkeypatch):
+        """Custom OpenAI-compatible API key and base_url must be forwarded to acompletion."""
+        custom_key = "custom-openai-key-12345"
+        custom_base = "https://api.neuralnexus.com/v1"
+
+        custom_openai_settings = type("Settings", (), {
+            "config": type("Config", (), {
+                "reasoning_effort": None,
+                "ai_timeout": 30,
+                "custom_reasoning_model": False,
+                "max_model_tokens": 32000,
+                "verbosity_level": 0,
+                "seed": -1,
+                "get": lambda self, key, default=None: default,
+            })(),
+            "litellm": type("LiteLLM", (), {
+                "get": lambda self, key, default=None: default,
+            })(),
+            "custom_openai": type("CustomOpenAI", (), {
+                "key": custom_key,
+                "api_base": custom_base,
+            })(),
+            "get": lambda self, key, default=None: (
+                custom_key if key == "CUSTOM_OPENAI.KEY" else
+                custom_base if key == "CUSTOM_OPENAI.API_BASE" else
+                default
+            ),
+        })()
+
+        monkeypatch.setattr(litellm_handler, "get_settings", lambda: custom_openai_settings)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setattr(litellm, "api_key", None)
+
+        with patch("pr_agent.algo.ai_handlers.litellm_ai_handler.acompletion",
+                   new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _mock_response()
+            handler = LiteLLMAIHandler()
+
+            # After init: litellm.api_key should be the custom key
+            assert litellm.api_key == custom_key
+            # After init: handler.api_base should be the custom base
+            assert handler.api_base == custom_base
+
+            await handler.chat_completion(model="openai/gpt-4o", system="sys", user="usr")
+
+        # The custom key and base must be forwarded
+        assert mock_call.call_args[1].get("api_key") == custom_key
+        assert mock_call.call_args[1].get("api_base") == custom_base
+
+    @pytest.mark.asyncio
+    async def test_custom_openai_base_without_key(self, monkeypatch):
+        """Custom OpenAI-compatible API base_url should be forwarded even without a custom key."""
+        custom_base = "https://api.neuralnexus.com/v1"
+
+        custom_openai_settings = type("Settings", (), {
+            "config": type("Config", (), {
+                "reasoning_effort": None,
+                "ai_timeout": 30,
+                "custom_reasoning_model": False,
+                "max_model_tokens": 32000,
+                "verbosity_level": 0,
+                "seed": -1,
+                "get": lambda self, key, default=None: default,
+            })(),
+            "litellm": type("LiteLLM", (), {
+                "get": lambda self, key, default=None: default,
+            })(),
+            "custom_openai": type("CustomOpenAI", (), {
+                "key": "",
+                "api_base": custom_base,
+            })(),
+            "get": lambda self, key, default=None: (
+                custom_base if key == "CUSTOM_OPENAI.API_BASE" else
+                default
+            ),
+        })()
+
+        monkeypatch.setattr(litellm_handler, "get_settings", lambda: custom_openai_settings)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setattr(litellm, "api_key", None)
+
+        with patch("pr_agent.algo.ai_handlers.litellm_ai_handler.acompletion",
+                   new_callable=AsyncMock) as mock_call:
+            mock_call.return_value = _mock_response()
+            handler = LiteLLMAIHandler()
+
+            # After init: handler.api_base should be the custom base
+            assert handler.api_base == custom_base
+
+            await handler.chat_completion(model="openai/gpt-4o", system="sys", user="usr")
+
+        # The custom base must be forwarded
+        assert mock_call.call_args[1].get("api_base") == custom_base
+        # No key should be forwarded since custom_openai.key is empty
+        assert "api_key" not in mock_call.call_args[1]
