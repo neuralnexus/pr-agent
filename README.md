@@ -21,8 +21,8 @@ The Original Open-Source PR Reviewer
 
 ---
 
- This repository contains the open-source PR Agent Project. 
- It is not the Qodo free tier.
+ This repository contains a lightly modified version of the open-source PR Agent Project. It is hacked to be compatible with third-party open-ai API endpoints
+
  
 Try the free version on our website.
 
