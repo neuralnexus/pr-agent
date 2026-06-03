@@ -26,7 +26,17 @@ def get_setting_or_env(key: str, default: Union[str, bool] = None) -> Union[str,
     try:
         value = get_settings().get(key, default)
     except AttributeError:  # TBD still need to debug why this happens on GitHub Actions
+        value = default
+    
+    if value is None or value == default:
+        # Dynaconf stores env vars as flat keys (e.g., github_action_config_auto_review)
+        # instead of nested keys (e.g., github_action_config.auto_review)
+        flat_key = key.replace('.', '_').lower()
+        value = get_settings().get(flat_key, None)
+    
+    if value is None:
         value = os.getenv(key, None) or os.getenv(key.upper(), None) or os.getenv(key.lower(), None) or default
+    
     return value
 
 
@@ -111,7 +121,12 @@ async def run_action():
         action = event_payload.get("action")
 
         # Retrieve the list of actions from the configuration
-        pr_actions = get_settings().get("GITHUB_ACTION_CONFIG.PR_ACTIONS", ["opened", "reopened", "ready_for_review", "review_requested"])
+        # Try nested key first, then flat key (Dynaconf stores env vars as flat keys)
+        pr_actions = get_settings().get("GITHUB_ACTION_CONFIG.PR_ACTIONS", None)
+        if pr_actions is None:
+            pr_actions = get_settings().get("github_action_config_pr_actions", None)
+        if pr_actions is None:
+            pr_actions = ["opened", "reopened", "ready_for_review", "review_requested"]
 
         if action in pr_actions:
             pr_url = event_payload.get("pull_request", {}).get("url")
