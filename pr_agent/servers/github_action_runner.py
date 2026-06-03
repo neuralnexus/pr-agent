@@ -46,6 +46,7 @@ async def run_action():
     GITHUB_EVENT_PATH = os.environ.get('GITHUB_EVENT_PATH')
     OPENAI_KEY = os.environ.get('OPENAI_KEY') or os.environ.get('OPENAI.KEY')
     OPENAI_ORG = os.environ.get('OPENAI_ORG') or os.environ.get('OPENAI.ORG')
+    OPENAI_API_BASE = os.environ.get('OPENAI_API_BASE') or os.environ.get('OPENAI.API_BASE')
     GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
     # get_settings().set("CONFIG.PUBLISH_OUTPUT_PROGRESS", False)
 
@@ -68,6 +69,8 @@ async def run_action():
         print("OPENAI_KEY not set")
     if OPENAI_ORG:
         get_settings().set("OPENAI.ORG", OPENAI_ORG)
+    if OPENAI_API_BASE:
+        get_settings().set("OPENAI.API_BASE", OPENAI_API_BASE)
     get_settings().set("GITHUB.USER_TOKEN", GITHUB_TOKEN)
     get_settings().set("GITHUB.DEPLOYMENT_TYPE", "user")
     
@@ -78,6 +81,8 @@ async def run_action():
         "config_fallback_models": "config.fallback_models",
         "custom_openai_key": "custom_openai.key",
         "custom_openai_api_base": "custom_openai.api_base",
+        "openai_api_base": "openai.api_base",
+        "openai_api_key": "openai.key",
     }
     for flat_key, nested_key in flat_to_nested.items():
         value = get_settings().get(flat_key, None)

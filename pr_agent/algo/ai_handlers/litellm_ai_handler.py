@@ -421,10 +421,10 @@ class LiteLLMAIHandler(BaseAiHandler):
                 deployment_id = self.deployment_id
                 if self.azure:
                     model = 'azure/' + model
-                # When using a custom OpenAI-compatible API, prefix model with 'openai/' so litellm routes correctly
+                # When using a custom OpenAI-compatible API, tell litellm the provider explicitly
+                # so it routes correctly without needing to prefix the model name.
                 if self.api_base and not model.startswith('openai/'):
-                    model = 'openai/' + model
-                    get_logger().info(f"Using custom OpenAI API base, prefixed model with 'openai/': {model}")
+                    get_logger().info(f"Using custom OpenAI API base with provider='openai': {model}")
                 if 'claude' in model and not system:
                     system = "No system prompt provided"
                     get_logger().warning(
@@ -483,6 +483,8 @@ class LiteLLMAIHandler(BaseAiHandler):
                         "timeout": get_settings().config.ai_timeout,
                         "api_base": self.api_base,
                     }
+                if self.api_base:
+                    kwargs["custom_llm_provider"] = "openai"
 
                 # Add temperature only if model supports it
                 if model not in self.no_support_temperature_models and not get_settings().config.custom_reasoning_model:
