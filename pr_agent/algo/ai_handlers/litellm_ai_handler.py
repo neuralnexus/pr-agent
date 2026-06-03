@@ -421,6 +421,10 @@ class LiteLLMAIHandler(BaseAiHandler):
                 deployment_id = self.deployment_id
                 if self.azure:
                     model = 'azure/' + model
+                # When using a custom OpenAI-compatible API, prefix model with 'openai/' so litellm routes correctly
+                if self.api_base and not model.startswith('openai/'):
+                    model = 'openai/' + model
+                    get_logger().info(f"Using custom OpenAI API base, prefixed model with 'openai/': {model}")
                 if 'claude' in model and not system:
                     system = "No system prompt provided"
                     get_logger().warning(
