@@ -70,6 +70,21 @@ async def run_action():
         get_settings().set("OPENAI.ORG", OPENAI_ORG)
     get_settings().set("GITHUB.USER_TOKEN", GITHUB_TOKEN)
     get_settings().set("GITHUB.DEPLOYMENT_TYPE", "user")
+    
+    # Flat env vars (e.g., CONFIG_MODEL) are stored by Dynaconf as flat keys (config_model)
+    # but the code expects nested keys (config.model). Copy flat keys to nested keys.
+    flat_to_nested = {
+        "config_model": "config.model",
+        "config_fallback_models": "config.fallback_models",
+        "custom_openai_key": "custom_openai.key",
+        "custom_openai_api_base": "custom_openai.api_base",
+    }
+    for flat_key, nested_key in flat_to_nested.items():
+        value = get_settings().get(flat_key, None)
+        if value is not None:
+            get_settings().set(nested_key, value)
+            get_logger().info(f"Set {nested_key} from flat env var {flat_key}")
+    
     enable_output = get_setting_or_env("GITHUB_ACTION_CONFIG.ENABLE_OUTPUT", True)
     if isinstance(enable_output, str):
         enable_output = enable_output.lower().strip() not in ("false", "0", "no", "")
