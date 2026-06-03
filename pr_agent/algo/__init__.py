@@ -69,6 +69,7 @@ MAX_TOKENS = {
     'deepseek/deepseek-chat': 128000,  # 128K, but may be limited by config.max_model_tokens
     'deepseek/deepseek-reasoner': 64000,  # 64K, but may be limited by config.max_model_tokens
     'nnx/fw/kimi-k2p6-turbo': 128000,  # 128K context, 8192 output
+    'nnx/turbo-kimi-k26': 128000,  # 128K context, 8192 output
     'openai/qwq-plus': 131072,  # 131K context length, but may be limited by config.max_model_tokens
     'replicate/llama-2-70b-chat:2c1608e18606fad2812020dc541930f2d0495ce32eee50074220b87300bc16e1': 4096,
     'meta-llama/Llama-2-7b-chat-hf': 4096,
@@ -312,5 +313,7 @@ CLAUDE_EXTENDED_THINKING_MODELS = [
 
 # Models that require streaming mode
 STREAMING_REQUIRED_MODELS = [
-    "openai/qwq-plus"
+    "openai/qwq-plus",
+    "nnx/turbo-kimi-k26",
+    "nnx/fw/kimi-k2p6-turbo",
 ]
